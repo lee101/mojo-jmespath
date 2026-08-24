@@ -81,11 +81,11 @@ Input: 500,000 JSON-compatible Python records; median of 7 runs
 
 | Query | mojo-jmespath | upstream jmespath | Speedup |
 | --- | ---: | ---: | ---: |
-| nested projection | 55.07 ms | 946.79 ms | 17.19x |
-| numeric filter, 50% selected | 145.34 ms | 2809.87 ms | 19.33x |
-| numeric filter, 1% selected | 61.65 ms | 2296.73 ms | 37.25x |
-| numeric != filter, 99.9% selected | 85.10 ms | 3264.02 ms | 38.36x |
-| string filter, 9.1% selected | 50.11 ms | 1979.11 ms | 39.50x |
+| nested projection | 68.82 ms | 866.22 ms | 12.59x |
+| numeric filter, 50% selected | 77.82 ms | 2230.15 ms | 28.66x |
+| numeric filter, 1% selected | 64.28 ms | 1884.80 ms | 29.32x |
+| numeric != filter, 99.9% selected | 91.70 ms | 2556.46 ms | 27.88x |
+| string filter, 9.1% selected | 53.02 ms | 1486.50 ms | 28.04x |
 
 Results vary with hardware, record shape, and selectivity. Non-accelerated
 expressions run through the Python visitor.
@@ -104,7 +104,10 @@ checks list sizes, depths, operation codes, required pointers for null,
 comparison errors, and list writes. Each returned borrowed reference is
 incremented before being placed in the result list.
 
-The kernels are scalar CPU traversal. There is no SIMD, threading, or GPU path:
-the work follows non-contiguous Python objects while holding the GIL.
+The kernels are scalar CPU traversal. There is no SIMD or threading path: the
+work follows non-contiguous Python objects and calls the CPython API while
+holding the GIL. These pointer-chasing kernels have negligible arithmetic
+intensity, so a GPU path is not justified; transferring object data would cost
+more than the comparisons themselves.
 
 MIT licensed. See `LICENSE`.
